@@ -8,16 +8,21 @@ const comment = "Have some pages..."
 
 func main() {
 
+	// get credentials
+	fmt.Println("Reading credentials from config")
 	config := getConfig()
 
 	// connect webclient to ssh tunnel
 	fmt.Println("Connecting tunnel via SSH")
-	ssh := createSSHClient(sshHost, config.SSHUser, config.SSHKeyFile)
-	client := createTunneledWebClient(ssh)
+	ssh, err := createSSHClient(sshHost, config.SSHUser, config.SSHKeyFile)
+	if err != nil {
+		fmt.Println("Failed to connect to SSH server")
+		fmt.Println(err)
+		return
+	}
 	defer ssh.Close()
 
-	// get papercut credentials
-	fmt.Println("Getting PaperCut credentials")
+	client := createTunneledWebClient(ssh)
 
 	// create papercut api
 	fmt.Println("Logging into PaperCut")

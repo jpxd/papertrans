@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -16,7 +17,7 @@ import (
 func checkHostKey(dialAddr string, addr net.Addr, key ssh.PublicKey) error {
 	baseKey := base64.StdEncoding.EncodeToString(key.Marshal())
 	if baseKey != sshHostKey {
-		return errors.New("ssh host key didn't match")
+		return errors.New("SSH host key didn't match")
 	}
 	return nil
 }
@@ -31,29 +32,36 @@ func keyAgentAuth() ssh.AuthMethod {
 func publicKeyAuth(file string) ssh.AuthMethod {
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
+		fmt.Println("Could not read privatekey:", err)
 		return nil
 	}
 
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
+		fmt.Println("Could not parse privatekey:", err)
 		return nil
 	}
 	return ssh.PublicKeys(key)
 }
 
-func createSSHClient(host string, user string, keyFile string) *ssh.Client {
+func createSSHClient(host string, user string, keyFile string) (*ssh.Client, error) {
+	var methods []ssh.AuthMethod
+
+	if keyAgent := keyAgentAuth(); keyAgent != nil {
+		methods = append(methods, keyAgent)
+	}
+
+	if pubKey := publicKeyAuth(keyFile); pubKey != nil {
+		methods = append(methods, pubKey)
+	}
+
 	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			keyAgentAuth(),
-			publicKeyAuth(keyFile),
-		},
+		User:            user,
+		Auth:            methods,
 		HostKeyCallback: checkHostKey,
 	}
 
-	conn, err := ssh.Dial("tcp", host, config)
-	check(err, "Failed to connect to SSH server")
-	return conn
+	return ssh.Dial("tcp", host, config)
 }
 
 func createSSHDialContext(client *ssh.Client) func(ctx context.Context, network, addr string) (net.Conn, error) {

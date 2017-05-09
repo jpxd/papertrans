@@ -2,13 +2,24 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"io/ioutil"
 	"net"
 	"os"
 
+	"errors"
+
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 )
+
+func checkHostKey(dialAddr string, addr net.Addr, key ssh.PublicKey) error {
+	baseKey := base64.StdEncoding.EncodeToString(key.Marshal())
+	if baseKey != sshHostKey {
+		return errors.New("ssh host key didn't match")
+	}
+	return nil
+}
 
 func keyAgentAuth() ssh.AuthMethod {
 	if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
@@ -37,6 +48,7 @@ func createSSHClient(host string, user string, keyFile string) *ssh.Client {
 			keyAgentAuth(),
 			publicKeyAuth(keyFile),
 		},
+		HostKeyCallback: checkHostKey,
 	}
 
 	conn, err := ssh.Dial("tcp", host, config)

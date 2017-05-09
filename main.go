@@ -3,6 +3,7 @@ package main
 import "fmt"
 
 const sshHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
+const sshHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5H61a9V7FiJOgLyljRZlPP5S2yVa+91nBinXUEfk4SOSUz/Xcg4U5vE/DdP/WADgAa0BtM1Yzay6Iaoq2NRrmxp2QLXvHn+HG1vZ3jHFIYkwBjU04JHfxb0No0g=="
 const comment = "Have some pages..."
 
 func main() {

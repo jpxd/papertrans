@@ -30,6 +30,10 @@ func keyAgentAuth() ssh.AuthMethod {
 }
 
 func publicKeyAuth(file string) ssh.AuthMethod {
+	if file == "" {
+		return nil
+	}
+
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
 		fmt.Println("Could not read privatekey:", err)

@@ -9,7 +9,7 @@ import (
 
 	"strconv"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/howeyc/gopass"
 )
 
 var stdinReader *bufio.Reader
@@ -32,10 +32,6 @@ func scanInt(prompt string) int {
 }
 
 func scanPassword(prompt string) string {
-	fmt.Print(prompt)
-	pwBytes, _ := terminal.ReadPassword(0)
-	fmt.Println()
-	pwStr := string(pwBytes)
-	pwStr = strings.TrimSpace(pwStr)
-	return pwStr
+	pwBytes, _ := gopass.GetPasswdPrompt(prompt, true, os.Stdin, os.Stdout)
+	return string(pwBytes)
 }

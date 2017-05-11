@@ -21,6 +21,8 @@ type configContainer struct {
 
 	PaperCutUsername string
 	PaperCutPassword string
+
+	TimeSlotMinutes int
 }
 
 func getConfig() *configContainer {
@@ -38,14 +40,26 @@ func createNewConfig() {
 	fmt.Println("A new config container is created.")
 	fmt.Println("Your credentials will be encrypted when stored on disk.")
 
+	fmt.Println()
 	user := scanInput("PaperCut username: ")
 	pass := scanPassword("PaperCut password: ")
 
-	sshUser := scanInput("Your TUD SSH username: ")
+	fmt.Println()
+	sshUser := scanInput("Your TUD SSH username (leave empty to use PaperCut username): ")
 	sshKeyFile := scanInput("Privatekey path (leave empty to use the keyagent): ")
 
+	if sshUser == "" {
+		sshUser = user
+	}
+
+	fmt.Println()
+	receiver := scanInput("Who do you want so send your pages to: ")
 	minPages := scanInt("Minimum amount of pages that should stay in your account: ")
-	receiver := scanInput("To whom do you want so send your pages: ")
+
+	fmt.Println()
+	fmt.Println("You can specify a time window ending at the turn of the month")
+	fmt.Println("and papertrans will only transfer pages inside that time window.")
+	minutes := scanIntOrDefault("Time window length in minutes (leave empty to transfer every time): ", 0)
 
 	container := &configContainer{
 		PaperCutUsername: user,
@@ -54,6 +68,7 @@ func createNewConfig() {
 		SSHKeyFile:       sshKeyFile,
 		MinPagesLeft:     minPages,
 		Receiver:         receiver,
+		TimeSlotMinutes:  minutes,
 	}
 
 	saveEncrypted(credsContainerPath, container, containerKey)

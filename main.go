@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"time"
 )
@@ -10,13 +11,29 @@ const sshHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5
 const comment = "Have some pages..."
 
 func main() {
+	// parse flags
+	configureFlag := flag.Bool("configure", false, "create a new configuration file")
+	checkFlag := flag.Bool("check", false, "only check page count")
+	flag.Parse()
+
+	// create new config if requested
+	if *configureFlag {
+		fmt.Println("Creating new config")
+		createNewConfig()
+
+		// if the user does not want to check his page count as well, we are done now
+		if !(*checkFlag) {
+			fmt.Println("Done")
+			return
+		}
+	}
 
 	// get credentials
 	fmt.Println("Reading credentials from config")
 	config := getConfig()
 
 	// check time window
-	if config.TimeSlotMinutes > 0 {
+	if !(*checkFlag) && config.TimeSlotMinutes > 0 {
 		fmt.Println("Checking time window")
 
 		now := time.Now()
@@ -31,6 +48,7 @@ func main() {
 
 		if now.Before(beginningOfWindow) {
 			fmt.Println("Not in time window")
+			fmt.Println("Done")
 			return
 		}
 	}
@@ -51,18 +69,25 @@ func main() {
 	fmt.Println("Logging into PaperCut")
 	pc := createPapercutAPI(config.PaperCutUsername, config.PaperCutPassword, client)
 
-	// lets tranfer some pages
+	// get page count
 	count := pc.getPagesLeft()
 	fmt.Println("Pages left:", count)
 
-	if count <= config.MinPagesLeft {
-		fmt.Println("Not enough pages left, aborting..")
+	// if we just wanted to check the page count, we are done now
+	if *checkFlag {
 		fmt.Println("Done")
 		return
 	}
 
-	amountToTransfer := count - config.MinPagesLeft
+	// make sure we have enough pages
+	if count <= config.MinPagesLeft {
+		fmt.Println("Not enough pages left, aborting...")
+		fmt.Println("Done")
+		return
+	}
 
+	// lets tranfer some pages
+	amountToTransfer := count - config.MinPagesLeft
 	fmt.Println("Transferring", amountToTransfer, "pages to", config.Receiver)
 	if pc.tranferPages(config.Receiver, amountToTransfer, comment) {
 		fmt.Println("Transfer was successful")

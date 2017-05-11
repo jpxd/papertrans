@@ -31,6 +31,15 @@ func scanInt(prompt string) int {
 	return int(num)
 }
 
+func scanIntOrDefault(prompt string, defaultValue int) int {
+	str := scanInput(prompt)
+	if str == "" {
+		return defaultValue
+	}
+	num, _ := strconv.ParseInt(str, 10, 32)
+	return int(num)
+}
+
 func scanPassword(prompt string) string {
 	pwBytes, _ := gopass.GetPasswdPrompt(prompt, true, os.Stdin, os.Stdout)
 	return string(pwBytes)

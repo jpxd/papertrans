@@ -28,8 +28,9 @@ type ConfigContainer struct {
 func LoadOrCreateConfig(path string) *ConfigContainer {
 	config, err := LoadConfig(path)
 	if err != nil {
-		config := CreateConfig()
-		err := SaveConfig(path, config)
+		fmt.Println("Could not load config file")
+		config = CreateConfig()
+		err = SaveConfig(path, config)
 		if err != nil {
 			fmt.Println("Failed to save config file:", err)
 		}
@@ -38,9 +39,8 @@ func LoadOrCreateConfig(path string) *ConfigContainer {
 }
 
 func CreateConfig() *ConfigContainer {
-	fmt.Println("Could not load config file.")
-	fmt.Println("A new config container is created.")
-	fmt.Println("Your credentials will be encrypted when stored on disk.")
+	fmt.Println("Creating new configuration")
+	fmt.Println("Your credentials will be encrypted when stored on disk")
 
 	fmt.Println()
 	user := scanInput("PaperCut username: ")
@@ -55,7 +55,7 @@ func CreateConfig() *ConfigContainer {
 	}
 
 	fmt.Println()
-	receiver := scanInput("Who do you want so send your pages to: ")
+	receiver := scanInput("Who do you want to send your pages to: ")
 	minPages := scanInt("Minimum amount of pages that should stay in your account: ")
 
 	fmt.Println()

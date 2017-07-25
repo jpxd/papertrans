@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"time"
+	"os"
 )
 
 const sshHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
@@ -11,34 +12,39 @@ const sshHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5
 const comment = "Have some pages..."
 
 func main() {
-	// parse flags
-	configureFlag := flag.Bool("configure", false, "create a new configuration file")
+	createConfigFlag := flag.Bool("create-config", false, "create a new configuration file")
 	checkFlag := flag.Bool("check", false, "only check page count")
 	flag.Parse()
 
-	var config *ConfigContainer
+	modeFlags := []*bool { createConfigFlag, checkFlag }
+	activeModeFlags := 0
 
-	// create new config if requested
-	if *configureFlag {
-		fmt.Println("Creating new config")
+	for _, flag := range modeFlags {
+		if *flag {
+			activeModeFlags += 1
+		}
+	}
+
+	if activeModeFlags > 1 {
+		fmt.Fprintf(os.Stderr, "Please specify at most one of these flags:\n")
+		fmt.Fprintf(os.Stderr, "  -create-config, -check\n")
+		os.Exit(2)
+	}
+
+	if *createConfigFlag {
 		config := CreateConfig()
 		err := SaveConfig(DefaultConfigPath, config)
 		if err != nil {
 			fmt.Println("Failed to save config file:", err)
-		}
-
-		// if the user does not want to check his page count as well, we are done now
-		if !(*checkFlag) {
-			fmt.Println("Done")
 			return
 		}
+		fmt.Println("Done")
+		return
 	}
 
 	// get credentials
-	if config == nil {
-		fmt.Println("Reading credentials from config")
-		config = LoadOrCreateConfig(DefaultConfigPath)
-	}
+	fmt.Println("Reading credentials from config")
+	config := LoadOrCreateConfig(DefaultConfigPath)
 
 	// check time window
 	if !(*checkFlag) && config.TimeSlotMinutes > 0 {

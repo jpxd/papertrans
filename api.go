@@ -18,7 +18,7 @@ type PapercutAPI struct {
 	client *WebClient
 }
 
-func createPapercutAPI(user string, pass string, webClient *WebClient) *PapercutAPI {
+func CreatePapercutAPI(user string, pass string, webClient *WebClient) *PapercutAPI {
 	pc := new(PapercutAPI)
 	pc.client = webClient
 	pc.getSession()
@@ -29,12 +29,12 @@ func createPapercutAPI(user string, pass string, webClient *WebClient) *Papercut
 }
 
 func (pc *PapercutAPI) getSession() {
-	resp := pc.client.get("https://print.informatik.tu-darmstadt.de/")
+	resp := pc.client.Get("https://print.informatik.tu-darmstadt.de/")
 	defer resp.Body.Close()
 }
 
 func (pc *PapercutAPI) loginUser(user string, pass string) bool {
-	resp := pc.client.postForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
+	resp := pc.client.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
 		"service":              {"direct/1/Home/$Form$0"},
 		"sp":                   {"S0"},
 		"Form0":                {"$Hidden$0,$Hidden$1,inputUsername,inputPassword,$PropertySelection$0,$Submit$0"},
@@ -53,8 +53,8 @@ func (pc *PapercutAPI) loginUser(user string, pass string) bool {
 	return ok
 }
 
-func (pc *PapercutAPI) getPagesLeft() int {
-	resp := pc.client.get("https://print.informatik.tu-darmstadt.de/app?service=page/UserSummary")
+func (pc *PapercutAPI) GetPagesLeft() int {
+	resp := pc.client.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserSummary")
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 
@@ -67,9 +67,9 @@ func (pc *PapercutAPI) getPagesLeft() int {
 	return count
 }
 
-func (pc *PapercutAPI) tranferPages(receiver string, amount int, comment string) bool {
+func (pc *PapercutAPI) TranferPages(receiver string, amount int, comment string) bool {
 	// get CSRF token
-	resp1 := pc.client.get("https://print.informatik.tu-darmstadt.de/app?service=page/UserTransfer")
+	resp1 := pc.client.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserTransfer")
 	defer resp1.Body.Close()
 	body, _ := ioutil.ReadAll(resp1.Body)
 	matches := hiddenFieldRegex.FindSubmatch(body)
@@ -78,7 +78,7 @@ func (pc *PapercutAPI) tranferPages(receiver string, amount int, comment string)
 	amountStr := strconv.Itoa(amount) + " Seiten"
 
 	// post transfer request
-	resp2 := pc.client.postForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
+	resp2 := pc.client.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
 		"service":         {"direct/1/UserTransfer/transferForm"},
 		"sp":              {"S0"},
 		"Form0":           {"$Hidden,inputAmount,inputToUsername,inputComment,$Submit"},

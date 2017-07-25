@@ -17,7 +17,7 @@ type WebClient struct {
 	cookieJar *cookiejar.Jar
 }
 
-func createWebClient() *WebClient {
+func CreateWebClient() *WebClient {
 	wc := WebClient{}
 	wc.cookieJar, _ = cookiejar.New(nil)
 	wc.client = &http.Client{
@@ -26,7 +26,7 @@ func createWebClient() *WebClient {
 	return &wc
 }
 
-func createTunneledWebClient(sshConn *ssh.Client) *WebClient {
+func CreateTunneledWebClient(sshConn *ssh.Client) *WebClient {
 	wc := WebClient{}
 	wc.cookieJar, _ = cookiejar.New(nil)
 	wc.client = &http.Client{
@@ -38,7 +38,7 @@ func createTunneledWebClient(sshConn *ssh.Client) *WebClient {
 	return &wc
 }
 
-func (wc *WebClient) performRequest(req *http.Request) *http.Response {
+func (wc *WebClient) PerformRequest(req *http.Request) *http.Response {
 	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := wc.client.Do(req)
@@ -48,14 +48,14 @@ func (wc *WebClient) performRequest(req *http.Request) *http.Response {
 	return resp
 }
 
-func (wc *WebClient) get(url string) *http.Response {
+func (wc *WebClient) Get(url string) *http.Response {
 	req, _ := http.NewRequest("GET", url, nil)
-	return wc.performRequest(req)
+	return wc.PerformRequest(req)
 }
 
-func (wc *WebClient) postForm(url string, data url.Values) *http.Response {
+func (wc *WebClient) PostForm(url string, data url.Values) *http.Response {
 	req, _ := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	return wc.performRequest(req)
+	return wc.PerformRequest(req)
 }

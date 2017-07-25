@@ -16,10 +16,16 @@ func main() {
 	checkFlag := flag.Bool("check", false, "only check page count")
 	flag.Parse()
 
+	var config *ConfigContainer
+
 	// create new config if requested
 	if *configureFlag {
 		fmt.Println("Creating new config")
-		createNewConfig()
+		config := CreateConfig()
+		err := SaveConfig(DefaultConfigPath, config)
+		if err != nil {
+			fmt.Println("Failed to save config file:", err)
+		}
 
 		// if the user does not want to check his page count as well, we are done now
 		if !(*checkFlag) {
@@ -29,8 +35,10 @@ func main() {
 	}
 
 	// get credentials
-	fmt.Println("Reading credentials from config")
-	config := getConfig()
+	if config == nil {
+		fmt.Println("Reading credentials from config")
+		config = LoadOrCreateConfig(DefaultConfigPath)
+	}
 
 	// check time window
 	if !(*checkFlag) && config.TimeSlotMinutes > 0 {
@@ -63,14 +71,14 @@ func main() {
 	}
 	defer ssh.Close()
 
-	client := createTunneledWebClient(ssh)
+	client := CreateTunneledWebClient(ssh)
 
 	// create papercut api
 	fmt.Println("Logging into PaperCut")
-	pc := createPapercutAPI(config.PaperCutUsername, config.PaperCutPassword, client)
+	pc := CreatePapercutAPI(config.PaperCutUsername, config.PaperCutPassword, client)
 
 	// get page count
-	count := pc.getPagesLeft()
+	count := pc.GetPagesLeft()
 	fmt.Println("Pages left:", count)
 
 	// if we just wanted to check the page count, we are done now
@@ -89,13 +97,13 @@ func main() {
 	// lets tranfer some pages
 	amountToTransfer := count - config.MinPagesLeft
 	fmt.Println("Transferring", amountToTransfer, "pages to", config.Receiver)
-	if pc.tranferPages(config.Receiver, amountToTransfer, comment) {
+	if pc.TranferPages(config.Receiver, amountToTransfer, comment) {
 		fmt.Println("Transfer was successful")
 	} else {
 		fmt.Println("Transfer has failed")
 	}
 
-	count = pc.getPagesLeft()
+	count = pc.GetPagesLeft()
 	fmt.Println("Pages left:", count)
 
 	fmt.Println("Done")

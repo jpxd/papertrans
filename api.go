@@ -1,10 +1,12 @@
-package main
+package papertrans
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/url"
 	"regexp"
 	"strconv"
+	"golang.org/x/crypto/ssh"
 )
 
 // regexes
@@ -13,14 +15,14 @@ var pageCountRegex = regexp.MustCompile("([0-9]+) Seiten")
 var hiddenFieldRegex = regexp.MustCompile("name=\"\\$Hidden\" value=\"([a-zA-Z0-9]+)\"")
 var transferSuccessfulRegex = regexp.MustCompile("tragung war erfolgreich.")
 
-// PapercutAPI object
-type PapercutAPI struct {
-	client *WebClient
+type PapercutApi struct {
+	webClient *WebClient
+	sshClient *ssh.Client // Only set if created and owned by this instance.
 }
 
-func CreatePapercutAPI(user string, pass string, webClient *WebClient) *PapercutAPI {
-	pc := new(PapercutAPI)
-	pc.client = webClient
+func createPapercutApiWithWebClient(user string, pass string, webClient *WebClient) *PapercutApi {
+	pc := new(PapercutApi)
+	pc.webClient = webClient
 	pc.getSession()
 	if !pc.loginUser(user, pass) {
 		panic("Could not login into PaperCut")
@@ -28,13 +30,30 @@ func CreatePapercutAPI(user string, pass string, webClient *WebClient) *Papercut
 	return pc
 }
 
-func (pc *PapercutAPI) getSession() {
-	resp := pc.client.Get("https://print.informatik.tu-darmstadt.de/")
+func CreatePapercutApi(config *ConfigContainer) (*PapercutApi, error) {
+	ssh, err := createSSHClient(sshHost, config.SSHUser, config.SSHKeyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	pc := new(PapercutApi)
+	pc.webClient = CreateTunneledWebClient(ssh)
+	pc.sshClient = ssh
+	pc.getSession()
+	if !pc.loginUser(config.PaperCutUsername, config.PaperCutPassword) {
+		pc.Close()
+		return nil, errors.New("failed to log in to papercut")
+	}
+	return pc, nil
+}
+
+func (pc *PapercutApi) getSession() {
+	resp := pc.webClient.Get("https://print.informatik.tu-darmstadt.de/")
 	defer resp.Body.Close()
 }
 
-func (pc *PapercutAPI) loginUser(user string, pass string) bool {
-	resp := pc.client.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
+func (pc *PapercutApi) loginUser(user string, pass string) bool {
+	resp := pc.webClient.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
 		"service":              {"direct/1/Home/$Form$0"},
 		"sp":                   {"S0"},
 		"Form0":                {"$Hidden$0,$Hidden$1,inputUsername,inputPassword,$PropertySelection$0,$Submit$0"},
@@ -53,8 +72,8 @@ func (pc *PapercutAPI) loginUser(user string, pass string) bool {
 	return ok
 }
 
-func (pc *PapercutAPI) GetPagesLeft() int {
-	resp := pc.client.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserSummary")
+func (pc *PapercutApi) GetPagesLeft() int {
+	resp := pc.webClient.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserSummary")
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 
@@ -67,9 +86,9 @@ func (pc *PapercutAPI) GetPagesLeft() int {
 	return count
 }
 
-func (pc *PapercutAPI) TranferPages(receiver string, amount int, comment string) bool {
+func (pc *PapercutApi) TranferPages(receiver string, amount int, comment string) bool {
 	// get CSRF token
-	resp1 := pc.client.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserTransfer")
+	resp1 := pc.webClient.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserTransfer")
 	defer resp1.Body.Close()
 	body, _ := ioutil.ReadAll(resp1.Body)
 	matches := hiddenFieldRegex.FindSubmatch(body)
@@ -78,7 +97,7 @@ func (pc *PapercutAPI) TranferPages(receiver string, amount int, comment string)
 	amountStr := strconv.Itoa(amount) + " Seiten"
 
 	// post transfer request
-	resp2 := pc.client.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
+	resp2 := pc.webClient.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
 		"service":         {"direct/1/UserTransfer/transferForm"},
 		"sp":              {"S0"},
 		"Form0":           {"$Hidden,inputAmount,inputToUsername,inputComment,$Submit"},
@@ -94,4 +113,9 @@ func (pc *PapercutAPI) TranferPages(receiver string, amount int, comment string)
 	ok := transferSuccessfulRegex.Match(body2)
 
 	return ok
+}
+
+func (pc *PapercutApi) Close() error {
+	if pc.sshClient == nil { return nil }
+	return pc.sshClient.Close()
 }

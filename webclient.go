@@ -1,4 +1,4 @@
-package main
+package papertrans
 
 import (
 	"net/http"
@@ -11,7 +11,6 @@ import (
 
 const userAgent = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"
 
-// WebClient ...
 type WebClient struct {
 	client    *http.Client
 	cookieJar *cookiejar.Jar

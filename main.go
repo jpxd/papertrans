@@ -1,4 +1,4 @@
-package main
+package papertrans
 
 import (
 	"flag"
@@ -81,7 +81,8 @@ func main() {
 
 	// create papercut api
 	fmt.Println("Logging into PaperCut")
-	pc := CreatePapercutAPI(config.PaperCutUsername, config.PaperCutPassword, client)
+	pc := createPapercutApiWithWebClient(config.PaperCutUsername, config.PaperCutPassword, client)
+	defer pc.Close()
 
 	// get page count
 	count := pc.GetPagesLeft()

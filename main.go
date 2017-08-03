@@ -1,8 +1,10 @@
-package main
+package papertrans
 
 import (
+	"flag"
 	"fmt"
 	"time"
+	"os"
 )
 
 const sshHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
@@ -10,13 +12,42 @@ const sshHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5
 const comment = "Have some pages..."
 
 func main() {
+	createConfigFlag := flag.Bool("create-config", false, "create a new configuration file")
+	checkFlag := flag.Bool("check", false, "only check page count")
+	flag.Parse()
+
+	modeFlags := []*bool { createConfigFlag, checkFlag }
+	activeModeFlags := 0
+
+	for _, flag := range modeFlags {
+		if *flag {
+			activeModeFlags += 1
+		}
+	}
+
+	if activeModeFlags > 1 {
+		fmt.Fprintf(os.Stderr, "Please specify at most one of these flags:\n")
+		fmt.Fprintf(os.Stderr, "  -create-config, -check\n")
+		os.Exit(2)
+	}
+
+	if *createConfigFlag {
+		config := CreateConfig()
+		err := SaveConfig(DefaultConfigPath, config)
+		if err != nil {
+			fmt.Println("Failed to save config file:", err)
+			return
+		}
+		fmt.Println("Done")
+		return
+	}
 
 	// get credentials
 	fmt.Println("Reading credentials from config")
-	config := getConfig()
+	config := LoadOrCreateConfig(DefaultConfigPath)
 
 	// check time window
-	if config.TimeSlotMinutes > 0 {
+	if !(*checkFlag) && config.TimeSlotMinutes > 0 {
 		fmt.Println("Checking time window")
 
 		now := time.Now()
@@ -31,6 +62,7 @@ func main() {
 
 		if now.Before(beginningOfWindow) {
 			fmt.Println("Not in time window")
+			fmt.Println("Done")
 			return
 		}
 	}
@@ -45,32 +77,40 @@ func main() {
 	}
 	defer ssh.Close()
 
-	client := createTunneledWebClient(ssh)
+	client := CreateTunneledWebClient(ssh)
 
 	// create papercut api
 	fmt.Println("Logging into PaperCut")
-	pc := createPapercutAPI(config.PaperCutUsername, config.PaperCutPassword, client)
+	pc := createPapercutApiWithWebClient(config.PaperCutUsername, config.PaperCutPassword, client)
+	defer pc.Close()
 
-	// lets tranfer some pages
-	count := pc.getPagesLeft()
+	// get page count
+	count := pc.GetPagesLeft()
 	fmt.Println("Pages left:", count)
 
-	if count <= config.MinPagesLeft {
-		fmt.Println("Not enough pages left, aborting..")
+	// if we just wanted to check the page count, we are done now
+	if *checkFlag {
 		fmt.Println("Done")
 		return
 	}
 
-	amountToTransfer := count - config.MinPagesLeft
+	// make sure we have enough pages
+	if count <= config.MinPagesLeft {
+		fmt.Println("Not enough pages left, aborting...")
+		fmt.Println("Done")
+		return
+	}
 
+	// lets tranfer some pages
+	amountToTransfer := count - config.MinPagesLeft
 	fmt.Println("Transferring", amountToTransfer, "pages to", config.Receiver)
-	if pc.tranferPages(config.Receiver, amountToTransfer, comment) {
+	if pc.TranferPages(config.Receiver, amountToTransfer, comment) {
 		fmt.Println("Transfer was successful")
 	} else {
 		fmt.Println("Transfer has failed")
 	}
 
-	count = pc.getPagesLeft()
+	count = pc.GetPagesLeft()
 	fmt.Println("Pages left:", count)
 
 	fmt.Println("Done")

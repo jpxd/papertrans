@@ -1,4 +1,4 @@
-package main
+package papertrans
 
 import (
 	"bytes"
@@ -7,12 +7,12 @@ import (
 	"io/ioutil"
 )
 
-const credsContainerPath = "config.store"
+const DefaultConfigPath = "config.store"
 
 // just preventing that no one sees your actual password over your shoulder by accident
-var containerKey = []byte("xei6bi7miXieWoDathohHe1baeseifae")
+var configKey = []byte("xei6bi7miXieWoDathohHe1baeseifae")
 
-type configContainer struct {
+type ConfigContainer struct {
 	MinPagesLeft int
 	Receiver     string
 
@@ -25,20 +25,22 @@ type configContainer struct {
 	TimeSlotMinutes int
 }
 
-func getConfig() *configContainer {
-	var container configContainer
-
-	for loadEncrypted(credsContainerPath, &container, containerKey) != nil {
-		createNewConfig()
+func LoadOrCreateConfig(path string) *ConfigContainer {
+	config, err := LoadConfig(path)
+	if err != nil {
+		fmt.Println("Could not load config file")
+		config = CreateConfig()
+		err = SaveConfig(path, config)
+		if err != nil {
+			fmt.Println("Failed to save config file:", err)
+		}
 	}
-
-	return &container
+	return config
 }
 
-func createNewConfig() {
-	fmt.Println("Could not load config file.")
-	fmt.Println("A new config container is created.")
-	fmt.Println("Your credentials will be encrypted when stored on disk.")
+func CreateConfig() *ConfigContainer {
+	fmt.Println("Creating new configuration")
+	fmt.Println("Your credentials will be encrypted when stored on disk")
 
 	fmt.Println()
 	user := scanInput("PaperCut username: ")
@@ -53,7 +55,7 @@ func createNewConfig() {
 	}
 
 	fmt.Println()
-	receiver := scanInput("Who do you want so send your pages to: ")
+	receiver := scanInput("Who do you want to send your pages to: ")
 	minPages := scanInt("Minimum amount of pages that should stay in your account: ")
 
 	fmt.Println()
@@ -61,7 +63,7 @@ func createNewConfig() {
 	fmt.Println("and papertrans will only transfer pages inside that time window.")
 	minutes := scanIntOrDefault("Time window length in minutes (leave empty to transfer every time): ", 0)
 
-	container := &configContainer{
+	return &ConfigContainer {
 		PaperCutUsername: user,
 		PaperCutPassword: pass,
 		SSHUser:          sshUser,
@@ -70,22 +72,19 @@ func createNewConfig() {
 		Receiver:         receiver,
 		TimeSlotMinutes:  minutes,
 	}
-
-	saveEncrypted(credsContainerPath, container, containerKey)
 }
 
-func saveEncrypted(path string, object interface{}, key []byte) error {
-	buf := new(bytes.Buffer)
-	encoder := gob.NewEncoder(buf)
-	encoder.Encode(object)
-
-	enc, err := encrypt(buf.Bytes(), key)
+func LoadConfig(path string) (*ConfigContainer, error) {
+	config := new(ConfigContainer)
+	err := loadEncrypted(path, config, configKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return config, nil
+}
 
-	err = ioutil.WriteFile(path, enc, 0700)
-	return err
+func SaveConfig(path string, config *ConfigContainer) error {
+	return saveEncrypted(path, config, configKey)
 }
 
 func loadEncrypted(path string, object interface{}, key []byte) error {
@@ -102,5 +101,19 @@ func loadEncrypted(path string, object interface{}, key []byte) error {
 	reader := bytes.NewReader(dec)
 	decoder := gob.NewDecoder(reader)
 	err = decoder.Decode(object)
+	return err
+}
+
+func saveEncrypted(path string, object interface{}, key []byte) error {
+	buf := new(bytes.Buffer)
+	encoder := gob.NewEncoder(buf)
+	encoder.Encode(object)
+
+	enc, err := encrypt(buf.Bytes(), key)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(path, enc, 0700)
 	return err
 }

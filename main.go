@@ -10,8 +10,6 @@ import (
 )
 
 const defaultConfigPath = "config.store"
-const sshHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
-const sshHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5H61a9V7FiJOgLyljRZlPP5S2yVa+91nBinXUEfk4SOSUz/Xcg4U5vE/DdP/WADgAa0BtM1Yzay6Iaoq2NRrmxp2QLXvHn+HG1vZ3jHFIYkwBjU04JHfxb0No0g=="
 const comment = "Have some pages..."
 
 func main() {
@@ -72,7 +70,7 @@ func main() {
 
 	// connect webclient to ssh tunnel
 	fmt.Println("Connecting tunnel via SSH")
-	ssh, err := papercut.CreateSSHClient(sshHost, sshHostKey, config.SSHUser, config.SSHKeyFile)
+	ssh, err := papercut.CreateSSHClient(papercut.DefaultSshHost, papercut.DefaultSshHostKey, config.SSHUser, config.SSHKeyFile)
 	if err != nil {
 		fmt.Println("Failed to connect to SSH server")
 		fmt.Println(err)

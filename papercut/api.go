@@ -11,6 +11,9 @@ import (
 )
 
 // consts
+const DefaultSshHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
+const DefaultSshHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5H61a9V7FiJOgLyljRZlPP5S2yVa+91nBinXUEfk4SOSUz/Xcg4U5vE/DdP/WADgAa0BtM1Yzay6Iaoq2NRrmxp2QLXvHn+HG1vZ3jHFIYkwBjU04JHfxb0No0g=="
+
 const apiBase = "https://print.informatik.tu-darmstadt.de"
 
 // regexes
@@ -34,8 +37,8 @@ func CreatePapercutApiWithWebClient(user string, pass string, webClient *WebClie
 	return pc
 }
 
-func CreateRemotePapercutApi(sshHost string, sshHostKey string, config *ConfigContainer) (*PapercutApi, error) {
-	ssh, err := CreateSSHClient(sshHost, sshHostKey, config.SSHUser, config.SSHKeyFile)
+func CreatePapercutApi(config* ConfigContainer) (*PapercutApi, error) {
+	ssh, err := CreateSSHClient(DefaultSshHost, DefaultSshHostKey, config.SSHUser, config.SSHKeyFile)
 	if err != nil {
 		return nil, err
 	}

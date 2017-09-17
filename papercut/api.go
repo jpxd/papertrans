@@ -1,4 +1,4 @@
-package papertrans
+package papercut
 
 import (
 	"errors"
@@ -24,7 +24,7 @@ type PapercutApi struct {
 	sshClient *ssh.Client // Only set if created and owned by this instance.
 }
 
-func createPapercutApiWithWebClient(user string, pass string, webClient *WebClient) *PapercutApi {
+func CreatePapercutApiWithWebClient(user string, pass string, webClient *WebClient) *PapercutApi {
 	pc := new(PapercutApi)
 	pc.webClient = webClient
 	pc.getSession()
@@ -34,8 +34,8 @@ func createPapercutApiWithWebClient(user string, pass string, webClient *WebClie
 	return pc
 }
 
-func CreatePapercutApi(config *ConfigContainer) (*PapercutApi, error) {
-	ssh, err := createSSHClient(sshHost, config.SSHUser, config.SSHKeyFile)
+func CreateRemotePapercutApi(sshHost string, sshHostKey string, config *ConfigContainer) (*PapercutApi, error) {
+	ssh, err := CreateSSHClient(sshHost, sshHostKey, config.SSHUser, config.SSHKeyFile)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func CreatePapercutApi(config *ConfigContainer) (*PapercutApi, error) {
 	pc.getSession()
 	if !pc.loginUser(config.PaperCutUsername, config.PaperCutPassword) {
 		pc.Close()
-		return nil, errors.New("failed to log in to papercut")
+		return nil, errors.New("Could not login into PaperCut")
 	}
 	return pc, nil
 }

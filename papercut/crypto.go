@@ -1,4 +1,4 @@
-package papertrans
+package papercut
 
 import (
 	"crypto/aes"

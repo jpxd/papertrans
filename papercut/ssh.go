@@ -1,4 +1,4 @@
-package papertrans
+package papercut
 
 import (
 	"context"
@@ -14,14 +14,15 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
-func checkHostKey(dialAddr string, addr net.Addr, key ssh.PublicKey) error {
-	baseKey := base64.StdEncoding.EncodeToString(key.Marshal())
-	if baseKey != sshHostKey {
-		return errors.New("SSH host key didn't match")
+func createHostKeyChecker(sshHostKey string) func(string, net.Addr, ssh.PublicKey) error {
+	return func(dialAddr string, addr net.Addr, key ssh.PublicKey) error {
+		baseKey := base64.StdEncoding.EncodeToString(key.Marshal())
+		if baseKey != sshHostKey {
+			return errors.New("SSH host key didn't match")
+		}
+		return nil
 	}
-	return nil
 }
-
 func keyAgentAuth() ssh.AuthMethod {
 	if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
 		return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
@@ -48,7 +49,7 @@ func publicKeyAuth(file string) ssh.AuthMethod {
 	return ssh.PublicKeys(key)
 }
 
-func createSSHClient(host string, user string, keyFile string) (*ssh.Client, error) {
+func CreateSSHClient(host string, hostKey string, user string, keyFile string) (*ssh.Client, error) {
 	var methods []ssh.AuthMethod
 
 	if keyAgent := keyAgentAuth(); keyAgent != nil {
@@ -62,7 +63,7 @@ func createSSHClient(host string, user string, keyFile string) (*ssh.Client, err
 	config := &ssh.ClientConfig{
 		User:            user,
 		Auth:            methods,
-		HostKeyCallback: checkHostKey,
+		HostKeyCallback: createHostKeyChecker(hostKey),
 	}
 
 	return ssh.Dial("tcp", host, config)

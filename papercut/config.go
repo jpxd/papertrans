@@ -1,4 +1,4 @@
-package papertrans
+package papercut
 
 import (
 	"bytes"
@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 )
-
-const DefaultConfigPath = "config.store"
 
 // just preventing that no one sees your actual password over your shoulder by accident
 var configKey = []byte("xei6bi7miXieWoDathohHe1baeseifae")
@@ -30,7 +28,7 @@ func LoadOrCreateConfig(path string) *ConfigContainer {
 	if err != nil {
 		fmt.Println("Could not load config file")
 		config = CreateConfig()
-		err = SaveConfig(path, config)
+		err = config.Save(path)
 		if err != nil {
 			fmt.Println("Failed to save config file:", err)
 		}
@@ -63,7 +61,7 @@ func CreateConfig() *ConfigContainer {
 	fmt.Println("and papertrans will only transfer pages inside that time window.")
 	minutes := scanIntOrDefault("Time window length in minutes (leave empty to transfer every time): ", 0)
 
-	return &ConfigContainer {
+	return &ConfigContainer{
 		PaperCutUsername: user,
 		PaperCutPassword: pass,
 		SSHUser:          sshUser,
@@ -83,7 +81,7 @@ func LoadConfig(path string) (*ConfigContainer, error) {
 	return config, nil
 }
 
-func SaveConfig(path string, config *ConfigContainer) error {
+func (config *ConfigContainer) Save(path string) error {
 	return saveEncrypted(path, config, configKey)
 }
 

@@ -1,12 +1,15 @@
-package papertrans
+package main
 
 import (
 	"flag"
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/jpxd/papertrans/papercut"
 )
 
+const defaultConfigPath = "config.store"
 const sshHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
 const sshHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5H61a9V7FiJOgLyljRZlPP5S2yVa+91nBinXUEfk4SOSUz/Xcg4U5vE/DdP/WADgAa0BtM1Yzay6Iaoq2NRrmxp2QLXvHn+HG1vZ3jHFIYkwBjU04JHfxb0No0g=="
 const comment = "Have some pages..."
@@ -32,8 +35,8 @@ func main() {
 	}
 
 	if *createConfigFlag {
-		config := CreateConfig()
-		err := SaveConfig(DefaultConfigPath, config)
+		config := papercut.CreateConfig()
+		err := config.Save(defaultConfigPath)
 		if err != nil {
 			fmt.Println("Failed to save config file:", err)
 			return
@@ -44,7 +47,7 @@ func main() {
 
 	// get credentials
 	fmt.Println("Reading credentials from config")
-	config := LoadOrCreateConfig(DefaultConfigPath)
+	config := papercut.LoadOrCreateConfig(defaultConfigPath)
 
 	// check time window
 	if !(*checkFlag) && config.TimeSlotMinutes > 0 {
@@ -69,7 +72,7 @@ func main() {
 
 	// connect webclient to ssh tunnel
 	fmt.Println("Connecting tunnel via SSH")
-	ssh, err := createSSHClient(sshHost, config.SSHUser, config.SSHKeyFile)
+	ssh, err := papercut.CreateSSHClient(sshHost, sshHostKey, config.SSHUser, config.SSHKeyFile)
 	if err != nil {
 		fmt.Println("Failed to connect to SSH server")
 		fmt.Println(err)
@@ -77,11 +80,11 @@ func main() {
 	}
 	defer ssh.Close()
 
-	client := CreateTunneledWebClient(ssh)
+	client := papercut.CreateTunneledWebClient(ssh)
 
 	// create papercut api
 	fmt.Println("Logging into PaperCut")
-	pc := createPapercutApiWithWebClient(config.PaperCutUsername, config.PaperCutPassword, client)
+	pc := papercut.CreatePapercutApiWithWebClient(config.PaperCutUsername, config.PaperCutPassword, client)
 	defer pc.Close()
 
 	// get page count

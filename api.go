@@ -6,8 +6,12 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+
 	"golang.org/x/crypto/ssh"
 )
+
+// consts
+const apiBase = "https://print.informatik.tu-darmstadt.de"
 
 // regexes
 var loginSuccessfulRegex = regexp.MustCompile("Angemeldet als:")
@@ -48,12 +52,12 @@ func CreatePapercutApi(config *ConfigContainer) (*PapercutApi, error) {
 }
 
 func (pc *PapercutApi) getSession() {
-	resp := pc.webClient.Get("https://print.informatik.tu-darmstadt.de/")
+	resp := pc.webClient.Get(apiBase)
 	defer resp.Body.Close()
 }
 
 func (pc *PapercutApi) loginUser(user string, pass string) bool {
-	resp := pc.webClient.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
+	resp := pc.webClient.PostForm(apiBase+"/app", url.Values{
 		"service":              {"direct/1/Home/$Form$0"},
 		"sp":                   {"S0"},
 		"Form0":                {"$Hidden$0,$Hidden$1,inputUsername,inputPassword,$PropertySelection$0,$Submit$0"},
@@ -63,7 +67,7 @@ func (pc *PapercutApi) loginUser(user string, pass string) bool {
 		"inputPassword":        {pass},
 		"$PropertySelection$0": {"de"},
 		"$Submit$0":            {"Anmelden"},
-	})
+	}, apiBase)
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -73,7 +77,7 @@ func (pc *PapercutApi) loginUser(user string, pass string) bool {
 }
 
 func (pc *PapercutApi) GetPagesLeft() int {
-	resp := pc.webClient.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserSummary")
+	resp := pc.webClient.Get(apiBase + "/app?service=page/UserSummary")
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 
@@ -88,7 +92,7 @@ func (pc *PapercutApi) GetPagesLeft() int {
 
 func (pc *PapercutApi) TranferPages(receiver string, amount int, comment string) bool {
 	// get CSRF token
-	resp1 := pc.webClient.Get("https://print.informatik.tu-darmstadt.de/app?service=page/UserTransfer")
+	resp1 := pc.webClient.Get(apiBase + "/app?service=page/UserTransfer")
 	defer resp1.Body.Close()
 	body, _ := ioutil.ReadAll(resp1.Body)
 	matches := hiddenFieldRegex.FindSubmatch(body)
@@ -97,7 +101,7 @@ func (pc *PapercutApi) TranferPages(receiver string, amount int, comment string)
 	amountStr := strconv.Itoa(amount) + " Seiten"
 
 	// post transfer request
-	resp2 := pc.webClient.PostForm("https://print.informatik.tu-darmstadt.de/app", url.Values{
+	resp2 := pc.webClient.PostForm(apiBase+"/app", url.Values{
 		"service":         {"direct/1/UserTransfer/transferForm"},
 		"sp":              {"S0"},
 		"Form0":           {"$Hidden,inputAmount,inputToUsername,inputComment,$Submit"},
@@ -106,7 +110,7 @@ func (pc *PapercutApi) TranferPages(receiver string, amount int, comment string)
 		"inputToUsername": {receiver},
 		"inputComment":    {comment},
 		"$Submit":         {"Übertragung"},
-	})
+	}, apiBase)
 	defer resp2.Body.Close()
 
 	body2, _ := ioutil.ReadAll(resp2.Body)
@@ -116,6 +120,8 @@ func (pc *PapercutApi) TranferPages(receiver string, amount int, comment string)
 }
 
 func (pc *PapercutApi) Close() error {
-	if pc.sshClient == nil { return nil }
+	if pc.sshClient == nil {
+		return nil
+	}
 	return pc.sshClient.Close()
 }

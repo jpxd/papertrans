@@ -3,8 +3,8 @@ package papertrans
 import (
 	"flag"
 	"fmt"
-	"time"
 	"os"
+	"time"
 )
 
 const sshHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
@@ -16,12 +16,12 @@ func main() {
 	checkFlag := flag.Bool("check", false, "only check page count")
 	flag.Parse()
 
-	modeFlags := []*bool { createConfigFlag, checkFlag }
+	modeFlags := []*bool{createConfigFlag, checkFlag}
 	activeModeFlags := 0
 
 	for _, flag := range modeFlags {
 		if *flag {
-			activeModeFlags += 1
+			activeModeFlags++
 		}
 	}
 

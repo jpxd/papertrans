@@ -52,9 +52,10 @@ func (wc *WebClient) Get(url string) *http.Response {
 	return wc.PerformRequest(req)
 }
 
-func (wc *WebClient) PostForm(url string, data url.Values) *http.Response {
+func (wc *WebClient) PostForm(url string, data url.Values, origin string) *http.Response {
 	req, _ := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
 	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Origin", origin)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return wc.PerformRequest(req)
 }

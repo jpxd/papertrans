@@ -70,7 +70,7 @@ func main() {
 
 	// connect webclient to ssh tunnel
 	fmt.Println("Connecting tunnel via SSH")
-	ssh, err := papercut.CreateSSHClient(papercut.DefaultSshHost, papercut.DefaultSshHostKey, config.SSHUser, config.SSHKeyFile)
+	ssh, err := papercut.CreateSSHClient(papercut.DefaultSSHHost, papercut.DefaultSSHHostKey, config.SSHUser, config.SSHKeyFile)
 	if err != nil {
 		fmt.Println("Failed to connect to SSH server")
 		fmt.Println(err)
@@ -82,7 +82,7 @@ func main() {
 
 	// create papercut api
 	fmt.Println("Logging into PaperCut")
-	pc := papercut.CreatePapercutApiWithWebClient(config.PaperCutUsername, config.PaperCutPassword, client)
+	pc := papercut.CreatePapercutAPIWithWebClient(config.PaperCutUsername, config.PaperCutPassword, client)
 	defer pc.Close()
 
 	// get page count

@@ -99,8 +99,8 @@ func (pc *PapercutAPI) GetPagesLeft() int {
 	return count
 }
 
-// TranferPages transfers a given amount of page credits to another user
-func (pc *PapercutAPI) TranferPages(receiver string, amount int, comment string) bool {
+// TransferPages transfers a given amount of page credits to another user
+func (pc *PapercutAPI) TransferPages(receiver string, amount int, comment string) bool {
 	// get CSRF token
 	resp1 := pc.webClient.Get(apiBase + "/app?service=page/UserTransfer")
 	defer resp1.Body.Close()

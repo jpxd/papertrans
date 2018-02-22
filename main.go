@@ -102,10 +102,10 @@ func main() {
 		return
 	}
 
-	// lets tranfer some pages
+	// lets transfer some pages
 	amountToTransfer := count - config.MinPagesLeft
 	fmt.Println("Transferring", amountToTransfer, "pages to", config.Receiver)
-	if pc.TranferPages(config.Receiver, amountToTransfer, comment) {
+	if pc.TransferPages(config.Receiver, amountToTransfer, comment) {
 		fmt.Println("Transfer was successful")
 	} else {
 		fmt.Println("Transfer has failed")

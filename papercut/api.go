@@ -66,14 +66,14 @@ func (pc *PapercutAPI) getSession() {
 
 func (pc *PapercutAPI) loginUser(user string, pass string) bool {
 	resp := pc.webClient.PostForm(apiBase+"/app", url.Values{
-		"service":              {"direct/1/Home/$Form$0"},
+		"service":              {"direct/1/Home/$Form"},
 		"sp":                   {"S0"},
-		"Form0":                {"$Hidden$0,$Hidden$1,inputUsername,inputPassword,$PropertySelection$0,$Submit$0"},
+		"Form0":                {"$Hidden$0,$Hidden$1,inputUsername,inputPassword,$Submit$0,$PropertySelection"},
 		"$Hidden$0":            {"true"},
 		"$Hidden$1":            {"X"},
 		"inputUsername":        {user},
 		"inputPassword":        {pass},
-		"$PropertySelection$0": {"de"},
+		"$PropertySelection":   {"de"},
 		"$Submit$0":            {"Anmelden"},
 	}, apiBase)
 	defer resp.Body.Close()

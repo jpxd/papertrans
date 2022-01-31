@@ -14,7 +14,7 @@ import (
 const DefaultSSHHost = "clientssh3.rbg.informatik.tu-darmstadt.de:22"
 
 // DefaultSSHHostKey is clientssh3s host key
-const DefaultSSHHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBH94yoY5H61a9V7FiJOgLyljRZlPP5S2yVa+91nBinXUEfk4SOSUz/Xcg4U5vE/DdP/WADgAa0BtM1Yzay6Iaoq2NRrmxp2QLXvHn+HG1vZ3jHFIYkwBjU04JHfxb0No0g=="
+const DefaultSSHHostKey = "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPkohFCPX0tmUqK+w3GWX3B+oGcVPGabuQ9nOZ0bjD37DyIva5qZ3QSr9HfJrz7D1GPIpVONQ8MWEaROisQaYNU="
 
 const apiBase = "https://print.informatik.tu-darmstadt.de"
 
